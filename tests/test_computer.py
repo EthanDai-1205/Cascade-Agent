@@ -348,6 +348,17 @@ class TestTheLoop(unittest.TestCase):
         self.assertEqual(result.stop_reason, "the engine judged the goal already achieved")
         self.assertEqual(len(session.actions), 1)
 
+    def test_a_step_records_what_was_on_offer(self) -> None:
+        chooser = ScriptedChooser(["click the button 'New Tab'", STOP])
+        session = FakeDesktop([a_desktop(), a_desktop(), a_desktop()])
+        result = run_computer_task(
+            "goal", desktop_config(), actor=ScriptedJev(chooser=chooser),
+            session=session, act=True,
+        )
+        first = result.steps[0]
+        self.assertEqual(first["options"], len(first["choices"]))
+        self.assertIn("click the button 'New Tab'", first["choices"])
+
     def test_the_ledger_receives_start_step_and_stop_records(self) -> None:
         from jev_cascade.ledger import Ledger
 

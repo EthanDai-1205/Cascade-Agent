@@ -449,6 +449,8 @@ def run_computer_task(
                 state, text=text, max_controls=max_controls, writer=bool(writer),
                 pinned_app=bool(app),
             )
+            step["options"] = len(options)
+            step["choices"] = list(options)
             prompt = _render_computer_state(state, goal)
 
             try:

@@ -344,7 +344,12 @@ def run_browser_task(
 
             options = build_options(state, text=text, max_controls=max_controls, writer=bool(writer))
             prompt = _render_state(state, goal)
-            step: dict[str, Any] = {"i": index, "url": state.get("url", ""), "options": len(options)}
+            step: dict[str, Any] = {
+                "i": index,
+                "url": state.get("url", ""),
+                "options": len(options),
+                "choices": list(options),
+            }
 
             if consecutive_noops >= 2:
                 result.stop_reason = "two steps with no change on the page"
