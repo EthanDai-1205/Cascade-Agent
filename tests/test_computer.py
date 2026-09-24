@@ -242,7 +242,13 @@ class TestTheLoop(unittest.TestCase):
         self.assertEqual([a["kind"] for a in session.actions], ["click"])
 
     def test_two_steps_with_no_change_stop_the_loop(self) -> None:
-        chooser = ScriptedChooser(["click the button 'New Tab'"])
+        # Alternating actions, so the repeat guard stays out of the way and this test
+        # exercises exactly the no-change guard.
+        chooser = ScriptedChooser([
+            "click the button 'New Tab'",
+            "scroll down to see more of what is on screen",
+            "click the button 'New Tab'",
+        ])
         session = FakeDesktop([a_desktop()])  # acting never changes the state
         result = run_computer_task(
             "goal", desktop_config(), actor=ScriptedJev(chooser=chooser), session=session, act=True
@@ -287,7 +293,10 @@ class TestTheLoop(unittest.TestCase):
         self.assertIn("the decision engine failed", result.stop_reason)
 
     def test_a_step_ceiling_can_be_lowered(self) -> None:
-        chooser = ScriptedChooser(["click the button 'New Tab'"])
+        chooser = ScriptedChooser([
+            "click the button 'New Tab'",
+            "scroll down to see more of what is on screen",
+        ])
         # Every act lands somewhere new, so only the ceiling can end this run.
         session = FakeDesktop([a_desktop(window=f"Page {i}") for i in range(1, 10)])
         result = run_computer_task(
@@ -295,6 +304,19 @@ class TestTheLoop(unittest.TestCase):
             session=session, act=True, max_steps=2,
         )
         self.assertIn("2-step ceiling", result.stop_reason)
+
+    def test_an_identical_action_is_never_repeated(self) -> None:
+        # Measured on Notes: the same phrase was typed five times into one note because
+        # state reads lagged the app, so the no-change guard never fired. The repeat is
+        # the thing to catch: identical action twice on a desktop is a stall that damages.
+        chooser = ScriptedChooser(["click the button 'New Tab'"] * 5)
+        session = FakeDesktop([a_desktop(window=f"Page {i}") for i in range(1, 10)])
+        result = run_computer_task(
+            "goal", desktop_config(), actor=ScriptedJev(chooser=chooser),
+            session=session, act=True, max_steps=6,
+        )
+        self.assertIn("repeated the same action", result.stop_reason)
+        self.assertEqual(len(session.actions), 1)
 
     def test_a_dry_run_reports_one_step_and_touches_nothing(self) -> None:
         chooser = ScriptedChooser(["click the button 'New Tab'"])
@@ -412,9 +434,11 @@ class TestAgainstTheRealDesktop(unittest.TestCase):
             config = desktop_config()
             result = run_computer_task(
                 "report what is on the screen", config,
-                # A non-stop answer, so the run reaches the dry-run branch and reports
-                # one step instead of ending on the engine's stop. Nothing is acted on.
-                actor=ScriptedJev(chooser=ScriptedChooser(["click"])),
+                # A non-stop answer that exists in every state, so the run reaches the
+                # dry-run branch and reports one step. Nothing is acted on. (The
+                # frontmost app during a test run is often Terminal, which exposes no
+                # clickable controls at all.)
+                actor=ScriptedJev(chooser=ScriptedChooser(["wait because"])),
                 session=session, act=False,
             )
             self.assertIn("dry run", result.stop_reason)

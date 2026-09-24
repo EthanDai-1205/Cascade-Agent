@@ -410,6 +410,7 @@ def run_computer_task(
 
     consecutive_noops = 0
     previous_fingerprint = ""
+    last_action_json = ""
     try:
         for index in range(1, max_steps + 1):
             state = session.state()
@@ -552,7 +553,24 @@ def run_computer_task(
                 result.stop_reason = "dry run: one step reported, nothing was done"
                 break
 
+            # Keystrokes are not idempotent and state reads can lag the app, so the
+            # no-change guard alone cannot catch a repeat. Measured on Notes (2026-09-24):
+            # the same phrase was typed five times into one note because every state read
+            # looked alike. An identical action twice is a stall, and on a desktop a
+            # stall damages.
+            action_json = json.dumps(action, sort_keys=True)
+            if action_json == last_action_json:
+                result.stop_reason = (
+                    "the engine repeated the same action; stopping rather than do it twice"
+                )
+                step["status"] = "refused"
+                step["detail"] = result.stop_reason
+                result.steps.append(step)
+                book.record({"type": "computer_step", **step, "acted": False})
+                break
+
             outcome = session.act(action)
+            last_action_json = action_json
             step["action"] = action
             step["acted"] = outcome["ok"]
             step["status"] = "acted" if outcome["ok"] else "refused"
