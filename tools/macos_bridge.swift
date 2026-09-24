@@ -260,15 +260,16 @@ let AXMenuAttribute = "AXMenu"
 // AXMenu attribute only exists in some states — so both paths are tried.
 func walkMenuBar(_ app: AXUIElement, _ collector: Collector) {
     guard let bar = axElement(app, kAXMenuBarAttribute as String) else { return }
+    // The Apple menu and the app's own menu (About, Settings, Services, Quit) are
+    // system baggage: together they flood the control budget before the app's real
+    // File and Edit menus are reached. A walk starts with the app's own menus.
+    let appName = axString(app, kAXTitleAttribute as String) ?? ""
     for item in axChildren(bar) {
         guard !collector.full else { return }
         let title = (axString(item, kAXTitleAttribute as String) ?? "")
             .split(separator: "\t").first.map(String.init) ?? ""
         guard !title.isEmpty else { continue }
-        // The Apple menu is system baggage: ~25 items that flood the control budget
-        // before the app's own File and Edit menus are reached. A goal that needs it
-        // can still get there by switching apps; a walk starts with the app's menus.
-        guard title != "Apple" else { continue }
+        guard title != "Apple", title != appName else { continue }
         let menu = axElement(item, AXMenuAttribute) ?? axChildren(item).first
         let children = menu.map { axChildren($0) } ?? []
         if children.isEmpty && collector.controls.count < MAX_CONTROLS {
