@@ -424,13 +424,28 @@ from that, or by the `swift` interpreter when compilation is unavailable. Swift 
 only for `computer`; the rest of the cascade does not need it, and the desktop tests skip
 themselves when the toolchain or the permission is missing.
 
+### What the desktop tool measured on its first day (2026-09-24)
+
+Live runs against real apps, every one auditable in `runs/*.jsonl` (gitignored):
+
+- **YouTube, via `browse`:** 5 decisions, **$0.0013** of engine, landed on
+  `youtube.com/results?search_query=jev+ai+computeruse`, verified in the ledger.
+- **Notes, via `computer`:** `File > New Note` was chosen at **confidence 1.00** as option
+  #1 and the note appeared — menu-leaf pressing through the Accessibility tree works.
+- **The guards earned their keep on camera.** An activation race made one run read
+  Edge's menu while aiming at Notes; activation is now verified in Python (osascript,
+  frontmost check, fail-fast). The same phrase was typed **five times** into one note
+  because AXValue reads lag the app and periodic text defeats the tail window — so an
+  identical action twice now ends the run before it acts. And with the screen locked,
+  the frontmost check reported `loginwindow` and refused to continue.
+
 ## Quickstart
 
 ```bash
 cd Coding/jev-cascade
 
 make demo      # full run, stub tiers and stub Jev, no keys, no network
-make test      # 279 offline checks: routing, gates, retries, budget, ledger, the eval,
+make test      # 284 offline checks: routing, gates, retries, budget, ledger, the eval,
                # the browser loop, the desktop loop, the writer
 make check     # validate your config and see which keys are present
 ```
@@ -674,6 +689,20 @@ a `judge_only` tier is refused here), `--candidates N`, `--no-verify`, `--max-co
   Accessibility grant is attached by macOS to whatever process runs the bridge (usually
   your terminal), so the grant follows the terminal, not this repo. No Screen Recording is
   requested and no pixels are read, by design.
+- **A desktop without visible state change stalls, by design.** An empty Notes body has
+  no text, no title, and no labeled fields, so a run that succeeded cannot always see
+  that it succeeded — measured above. The backstops are the no-change guard, the
+  confidence floor, and the identical-action refusal; what they cost is an occasional
+  extra click before the run stops.
+- **Menu items are walked, not opened.** Leaves like `File > New Note` are pressed
+  directly through AXPress (measured working); the Apple menu and the app's own menu
+  are skipped so they cannot crowd File and Edit out of the control budget.
+- **Activation is verified, not assumed.** A run started with `--app` brings the app to
+  the front via osascript, re-reads the state until the frontmost app is the wanted one,
+  and fails fast naming what is actually frontmost — a locked screen (`loginwindow`)
+  stops the tool instead of acting against it. Pinned runs are offered no app-switch
+  options: a goal that says "note" beside a list of running notes-apps is an invitation
+  to wander.
 - **The browser tool cannot write by itself.** Composing a search query or a message needs
   a text model, and neither decision engine generates text. Pass `--text` with the string
   to type, or set a `writer_tier` so the cheap tier composes it behind a Jev gate — the
@@ -728,12 +757,14 @@ a `judge_only` tier is refused here), `--candidates N`, `--no-verify`, `--max-co
 7. **Let a `run` plan include a browser step**, so a task can say "look this up and write the
    summary" and get both halves from one loop and one ledger, instead of running `browse`
    and `run` separately.
-8. **Give the desktop tool its first measured run.** The browser's numbers above are
-   measured; the desktop tool is built and tested but has no recorded run yet. The first
-   measurement worth keeping: a small set of real goals on real apps, steps to done,
-   confidence trace, engine cost per goal, and the failure modes the AX tree could not
-   see. The same measurement repeated with `[computer] actor = "laya"` would say whether
-   the hosted engine's action-selection edge holds off a browser.
+8. **Finish the desktop tool's measured run.** The first day is recorded above (one
+   browse goal and several Notes runs, guards caught firing on camera), but a clean
+   end-to-end run — create a note, type into it, stop — is still owed a recording with
+   the screen unlocked. The measurement worth keeping after that: a small set of real
+   goals on real apps, steps to done, confidence trace, engine cost per goal, and the
+   failure modes the AX tree could not see. The same measurement repeated with
+   `[computer] actor = "laya"` would say whether the hosted engine's action-selection
+   edge holds off a browser.
 
 ## Layout
 
@@ -755,7 +786,7 @@ jev_cascade/
 tools/browser_bridge.mjs   the Playwright session the browser tool drives
 tools/macos_bridge.swift   the Accessibility-tree reader the desktop tool drives
   testing.py    test doubles (ScriptedJev, StaticPlanner, FailingProvider)
-tests/          279 offline checks, no keys and no network
+tests/          284 offline checks, no keys and no network
 evals/tasks.toml   the eval's 16-task set, difficulty interleaved on purpose
 evals/results/     the measured eval reports quoted above, every run kept
 config.example.toml
