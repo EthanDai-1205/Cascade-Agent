@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+config.toml
+runs/
+*.jsonl
+.pytest_cache/
+
+.env
+.macos_bridge
+.macos_bridge.dSYM/

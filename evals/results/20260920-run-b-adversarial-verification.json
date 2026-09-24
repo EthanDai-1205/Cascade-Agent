@@ -1,0 +1,283 @@
+{
+  "judge_tier": "expensive",
+  "stub": false,
+  "pairs": 12,
+  "unparsed_judgements": 0,
+  "judge_failures": 0,
+  "generation_failures": 0,
+  "planner_failures": 1,
+  "costs": {
+    "model_usd": 0.04932,
+    "jev_usd": 0.001214,
+    "judge_usd": 0.045657,
+    "total_usd": 0.096191
+  },
+  "mean_cost_per_step": {
+    "cheap": 0.000925,
+    "strong": 0.003185
+  },
+  "gate": {
+    "mean_p_real": 0.8983,
+    "mean_p_corrupted": 0.3858,
+    "separation": 0.5125,
+    "mean_p_when_sufficient": 0.9073,
+    "mean_p_when_insufficient": 0.8,
+    "discrimination": 0.1073,
+    "sufficient_samples": 11,
+    "insufficient_samples": 1
+  },
+  "routing": {
+    "under_routed": 0,
+    "over_routed": 2,
+    "steps": 12
+  },
+  "judge_position": {
+    "a_wins": 6,
+    "judged": 12,
+    "a_win_rate": 0.5
+  },
+  "gate_is_decorative": false,
+  "recommended_threshold": 0.9,
+  "recommended_reason": "cheapest threshold that keeps missed shortfalls at or under 5% (missed 0% here)",
+  "sweep": [
+    {
+      "threshold": 0.1,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.0833,
+      "corrupt_pass_rate": 0.9167,
+      "expected_cost": 0.000925
+    },
+    {
+      "threshold": 0.2,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.0833,
+      "corrupt_pass_rate": 0.8333,
+      "expected_cost": 0.000925
+    },
+    {
+      "threshold": 0.3,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.0833,
+      "corrupt_pass_rate": 0.6667,
+      "expected_cost": 0.000925
+    },
+    {
+      "threshold": 0.4,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.0833,
+      "corrupt_pass_rate": 0.4167,
+      "expected_cost": 0.000925
+    },
+    {
+      "threshold": 0.5,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.0833,
+      "corrupt_pass_rate": 0.25,
+      "expected_cost": 0.000925
+    },
+    {
+      "threshold": 0.6,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.0833,
+      "corrupt_pass_rate": 0.1667,
+      "expected_cost": 0.000925
+    },
+    {
+      "threshold": 0.7,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.0833,
+      "corrupt_pass_rate": 0.0833,
+      "expected_cost": 0.000925
+    },
+    {
+      "threshold": 0.8,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.0833,
+      "corrupt_pass_rate": 0.0833,
+      "expected_cost": 0.000925
+    },
+    {
+      "threshold": 0.9,
+      "escalate_rate": 0.3333,
+      "wasted_rate": 0.25,
+      "missed_rate": 0.0,
+      "corrupt_pass_rate": 0.0,
+      "expected_cost": 0.001987
+    },
+    {
+      "threshold": 1.0,
+      "escalate_rate": 1.0,
+      "wasted_rate": 0.9167,
+      "missed_rate": 0.0,
+      "corrupt_pass_rate": 0.0,
+      "expected_cost": 0.00411
+    }
+  ],
+  "samples": [
+    {
+      "task": "trivial-rename",
+      "step": "s1",
+      "goal": "Write the rewritten Python snippet with the parameter and every use of d renamed to depth, leaving all other tokens unch",
+      "cheap_p": 0.97,
+      "strong_p": 0.96,
+      "corrupt_p": 0.18,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 1.0,
+      "judge_order": "strong-first",
+      "judge_note": "Both candidates output the exact required rewritten snippet with all uses of d renamed to depth and no other changes."
+    },
+    {
+      "task": "simple-fn",
+      "step": "s1",
+      "goal": "produce the deliverable for the task: Write a Python function chunk(items, size) that yields consecutive lists of at mos",
+      "cheap_p": 0.89,
+      "strong_p": 0.91,
+      "corrupt_p": 0.08,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.99,
+      "judge_order": "strong-first",
+      "judge_note": "Both implementations correctly yield consecutive lists of at most size items without importing itertools for valid size values."
+    },
+    {
+      "task": "explain-error",
+      "step": "s1",
+      "goal": "Write an explanation of why adding a list to a set raises TypeError: unhashable type: 'list'.",
+      "cheap_p": 0.88,
+      "strong_p": 0.88,
+      "corrupt_p": 0.82,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.95,
+      "judge_order": "strong-first",
+      "judge_note": "Both meet the criteria, but B is more thorough by explicitly connecting hash/__eq__, explaining __hash__ = None, and showing the set.add route to the error."
+    },
+    {
+      "task": "explain-error",
+      "step": "s2",
+      "goal": "State the smallest code fix for adding a list to a set by converting the list to a hashable equivalent.",
+      "cheap_p": 0.91,
+      "strong_p": 0.9,
+      "corrupt_p": 0.36,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.96,
+      "judge_order": "cheap-first",
+      "judge_note": "Both state the exact tuple(my_list) fix, explain tuple immutability and hashability, and avoid unnecessary rewrites."
+    },
+    {
+      "task": "summarize-tradeoffs",
+      "step": "s1",
+      "goal": "List the decision criteria and constraints for a single-user desktop app that needs full text search.",
+      "cheap_p": 0.9,
+      "strong_p": 0.87,
+      "corrupt_p": 0.4,
+      "verdict": "cheap-ok",
+      "route": "expensive",
+      "route_confidence": 0.36,
+      "judge_order": "cheap-first",
+      "judge_note": "Candidate A provides more detailed, actionable criteria and hard constraints with explicit coverage of every required area, while Candidate B is sufficient but higher-level."
+    },
+    {
+      "task": "summarize-tradeoffs",
+      "step": "s2",
+      "goal": "Write a concise assessment of SQLite for the desktop-app full text search use case.",
+      "cheap_p": 0.9,
+      "strong_p": 0.8,
+      "corrupt_p": 0.35,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.12,
+      "judge_order": "cheap-first",
+      "judge_note": "Candidate A covers every required criterion with more precise specifics, including explicit FTS5 query syntax and detailed limitations/fit, while B is sufficient but less detailed."
+    },
+    {
+      "task": "summarize-tradeoffs",
+      "step": "s3",
+      "goal": "Write a concise assessment of PostgreSQL for the desktop-app full text search use case.",
+      "cheap_p": 0.85,
+      "strong_p": 0.83,
+      "corrupt_p": 0.31,
+      "verdict": "cheap-ok",
+      "route": "expensive",
+      "route_confidence": 0.23,
+      "judge_order": "strong-first",
+      "judge_note": "Both meet the criteria, but B is more comprehensively detailed while remaining concise, explicitly covering query syntax helpers, ranking options, and fit."
+    },
+    {
+      "task": "summarize-tradeoffs",
+      "step": "s4",
+      "goal": "Produce a side-by-side comparison of SQLite and PostgreSQL against the criteria.",
+      "cheap_p": 0.8,
+      "strong_p": 0.79,
+      "corrupt_p": 0.65,
+      "verdict": "strong-better",
+      "route": "expensive",
+      "route_confidence": 0.37,
+      "judge_order": "strong-first",
+      "judge_note": "Candidate A satisfies the comparison and trade-off requirements without unsupported claims, while Candidate B makes false claims about SQLite lacking window functions and JSON operators."
+    },
+    {
+      "task": "debug-subtle",
+      "step": "s1",
+      "goal": "Identify the exact bug in avg([]) and the resulting failure mode.",
+      "cheap_p": 0.92,
+      "strong_p": 0.9,
+      "corrupt_p": 0.55,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.77,
+      "judge_order": "cheap-first",
+      "judge_note": "Both candidates correctly state that len(xs) is zero for an empty list, causing division by zero and a ZeroDivisionError in Python."
+    },
+    {
+      "task": "debug-subtle",
+      "step": "s3",
+      "goal": "Write a corrected avg function that handles empty input according to the chosen policy and otherwise returns sum(xs)/len",
+      "cheap_p": 0.91,
+      "strong_p": 0.91,
+      "corrupt_p": 0.28,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.77,
+      "judge_order": "strong-first",
+      "judge_note": "Both avoid division by zero, return the correct average for non-empty lists, and distinctly handle empty input (None vs ValueError) without a specified policy to prefer one."
+    },
+    {
+      "task": "debug-subtle",
+      "step": "s4",
+      "goal": "Explain why the corrected version distinguishes empty input from a genuine zero.",
+      "cheap_p": 0.92,
+      "strong_p": 0.88,
+      "corrupt_p": 0.42,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.74,
+      "judge_order": "cheap-first",
+      "judge_note": "Both meet the criteria, but A is more thorough because it includes the concrete guard, explains why the empty branch avoids an obscured ZeroDivisionError, and explicitly contrasts undefined empty outp"
+    },
+    {
+      "task": "debug-subtle",
+      "step": "s5",
+      "goal": "Provide example calls showing the behavior of avg([]) and avg([0]) with the corrected implementation.",
+      "cheap_p": 0.93,
+      "strong_p": 0.9,
+      "corrupt_p": 0.23,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.62,
+      "judge_order": "strong-first",
+      "judge_note": "Both examples clearly demonstrate avg([]) raising a ValueError and avg([0]) returning 0.0, matching the chosen policy."
+    }
+  ],
+  "note": "Evidence for the numbers quoted in README.md. Run A used the original verification question, run B the adversarial one; both against real System One and real DeepSeek tiers, 12 pairs over evals/tasks.toml."
+}

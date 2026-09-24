@@ -1,0 +1,95 @@
+# Task set for the split-quality eval (python3 -m jev_cascade eval).
+#
+# Each task is decomposed by the real planner, then every generative step is
+# turned into a cheap/strong pair. Keep tasks short: every pair costs one cheap
+# call, one strong call, three System One calls and one judge call.
+#
+# The set is deliberately mixed. Some tasks a small model should nail, some it
+# should not, because a set that is uniformly easy or uniformly hard cannot tell
+# you where the threshold belongs.
+#
+# The order interleaves difficulty on purpose. The eval stops at `max_pairs`, so a
+# set sorted easy-first would spend the whole budget on the tasks a small model
+# already handles, and never sample the ones the threshold is supposed to catch.
+# Read the `note` field as the intent, not as ground truth: the point of the run is
+# to find out where that intent was wrong.
+
+[[tasks]]
+id = "trivial-rename"
+task = "Rewrite this Python snippet with the variable d renamed to depth everywhere: def f(d): return d * 2"
+note = "cheap should be sufficient"
+
+[[tasks]]
+id = "race-condition"
+task = "Two threads miss the same cache entry, both compute, and the slower one overwrites the fresher value. Explain the failure and give a fix that does not hold a global lock across the whole computation."
+note = "strong should win: concurrency reasoning"
+
+[[tasks]]
+id = "simple-fn"
+task = "Write a Python function chunk(items, size) that yields consecutive lists of at most size items, without importing itertools."
+note = "cheap should be sufficient"
+
+[[tasks]]
+id = "design-schema"
+task = "Design the database schema for a multi-tenant feature-flag service: list the tables with their keys, the indexes you would add, and one trade-off you accepted."
+note = "strong should win: multi-part design with a stated trade-off"
+
+[[tasks]]
+id = "explain-error"
+task = "Explain what causes TypeError: unhashable type: 'list' when adding a list to a set, and give the smallest fix."
+note = "moderate"
+
+[[tasks]]
+id = "migration-zero-downtime"
+task = "Plan a zero-downtime Postgres migration that splits a live 50M row name column into first_name and last_name: the ordered steps, what old code still running sees at each step, and the rollback."
+note = "strong should win: ordered plan under live traffic"
+
+[[tasks]]
+id = "summarize-tradeoffs"
+task = "Compare SQLite and PostgreSQL for a single-user desktop app that needs full text search, and recommend one."
+note = "moderate"
+
+[[tasks]]
+id = "regex-extract"
+task = "Write a Python regular expression that pulls the version out of strings like pkg-1.2.3-beta and show what it returns for that input."
+note = "cheap should be sufficient"
+
+[[tasks]]
+id = "contradiction-requirements"
+task = "A rate limiter must allow at most 100 requests per user per minute, allow bursts of 20, and keep state only in process memory across 3 servers with no shared store. Say whether all three are satisfiable and why."
+note = "strong should win: the requirements may conflict"
+
+[[tasks]]
+id = "json-to-csv"
+task = "Convert [{\"a\":1,\"b\":2},{\"a\":3}] to CSV with a header row, decide what happens to the missing key, and show the output."
+note = "cheap should be sufficient: mechanical, but the missing key is easy to fumble"
+
+[[tasks]]
+id = "debug-subtle"
+task = "Find the bug in def avg(xs): return sum(xs) / len(xs) when it is called with an empty list, explain the failure mode, and give a corrected version that distinguishes empty input from a genuine zero."
+note = "strong should win"
+
+[[tasks]]
+id = "perf-diagnosis"
+task = "A Django endpoint became 4x slower right after we added a database index. Give three plausible causes and how you would tell them apart."
+note = "strong should win: the premise is counterintuitive"
+
+[[tasks]]
+id = "sql-query"
+task = "Write SQL over orders(id, customer_id, total, created_at) and customers(id, name) returning the top 3 customers by 2024 spend, with their name and spend."
+note = "cheap should be sufficient"
+
+[[tasks]]
+id = "test-edge-cases"
+task = "List the edge cases a test suite must cover for a function parse_duration('1h30m') that returns seconds, and say which one is most often missed."
+note = "moderate"
+
+[[tasks]]
+id = "async-retry"
+task = "Write Python that awaits a coroutine up to 3 times with exponential backoff and jitter, raising the last error, using no third-party library."
+note = "moderate"
+
+[[tasks]]
+id = "commit-message"
+task = "Write a conventional-commit message for a change that renames the user table to account everywhere, and mention the rollout risk in the body."
+note = "cheap should be sufficient"

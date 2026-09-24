@@ -1,0 +1,337 @@
+{
+  "judge_tier": "judge",
+  "cheap_tier": "cheap",
+  "strong_tier": "expensive",
+  "stub": false,
+  "pairs": 16,
+  "unparsed_judgements": 0,
+  "judge_failures": 0,
+  "generation_failures": 0,
+  "gate_failures": 0,
+  "planner_failures": 1,
+  "costs": {
+    "model_usd": 0.249295,
+    "jev_usd": 0.01597,
+    "judge_usd": 0.274494,
+    "total_usd": 0.539759
+  },
+  "mean_cost_per_step": {
+    "cheap": 0.003,
+    "strong": 0.012581
+  },
+  "gate": {
+    "mean_p_real": 0.8306,
+    "mean_p_corrupted": 0.465,
+    "separation": 0.3656,
+    "mean_p_when_sufficient": 0.8533,
+    "mean_p_when_insufficient": 0.7625,
+    "discrimination": 0.0908,
+    "sufficient_samples": 12,
+    "insufficient_samples": 4
+  },
+  "routing": {
+    "under_routed": 2,
+    "over_routed": 6,
+    "steps": 16
+  },
+  "judge_position": {
+    "a_wins": 10,
+    "judged": 16,
+    "a_win_rate": 0.625
+  },
+  "gate_is_decorative": false,
+  "recommended_threshold": 0.9,
+  "recommended_reason": "cheapest threshold that keeps missed shortfalls at or under 5% (missed 0% here)",
+  "sweep": [
+    {
+      "threshold": 0.1,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.25,
+      "corrupt_pass_rate": 1.0,
+      "expected_cost": 0.003
+    },
+    {
+      "threshold": 0.2,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.25,
+      "corrupt_pass_rate": 0.8125,
+      "expected_cost": 0.003
+    },
+    {
+      "threshold": 0.3,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.25,
+      "corrupt_pass_rate": 0.75,
+      "expected_cost": 0.003
+    },
+    {
+      "threshold": 0.4,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.25,
+      "corrupt_pass_rate": 0.5625,
+      "expected_cost": 0.003
+    },
+    {
+      "threshold": 0.5,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.25,
+      "corrupt_pass_rate": 0.5,
+      "expected_cost": 0.003
+    },
+    {
+      "threshold": 0.6,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.25,
+      "corrupt_pass_rate": 0.25,
+      "expected_cost": 0.003
+    },
+    {
+      "threshold": 0.7,
+      "escalate_rate": 0.125,
+      "wasted_rate": 0.0625,
+      "missed_rate": 0.1875,
+      "corrupt_pass_rate": 0.25,
+      "expected_cost": 0.004573
+    },
+    {
+      "threshold": 0.8,
+      "escalate_rate": 0.25,
+      "wasted_rate": 0.125,
+      "missed_rate": 0.125,
+      "corrupt_pass_rate": 0.125,
+      "expected_cost": 0.006145
+    },
+    {
+      "threshold": 0.9,
+      "escalate_rate": 0.75,
+      "wasted_rate": 0.5,
+      "missed_rate": 0.0,
+      "corrupt_pass_rate": 0.0,
+      "expected_cost": 0.012436
+    },
+    {
+      "threshold": 1.0,
+      "escalate_rate": 1.0,
+      "wasted_rate": 0.75,
+      "missed_rate": 0.0,
+      "corrupt_pass_rate": 0.0,
+      "expected_cost": 0.015581
+    }
+  ],
+  "samples": [
+    {
+      "task": "trivial-rename",
+      "step": "s1",
+      "goal": "Rewrite the Python snippet by renaming variable 'd' to 'depth' everywhere.",
+      "cheap_p": 0.97,
+      "strong_p": 0.97,
+      "corrupt_p": 0.13,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 1.0,
+      "judge_order": "strong-first",
+      "judge_note": "Both candidates provide the same syntactically correct and functionally equivalent Python code snippet with 'd' renamed to 'depth'."
+    },
+    {
+      "task": "race-condition",
+      "step": "s1",
+      "goal": "Explain how two threads missing the same cache entry can lead to the slower thread overwriting the fresher value.",
+      "cheap_p": 0.81,
+      "strong_p": 0.91,
+      "corrupt_p": 0.36,
+      "verdict": "strong-better",
+      "route": "cheap",
+      "route_confidence": 0.17,
+      "judge_order": "strong-first",
+      "judge_note": "Candidate A details the sequence with explicit steps covering cache miss, concurrent computation, and slower thread overwriting, while Candidate B only summarizes without detailing the required sequen"
+    },
+    {
+      "task": "race-condition",
+      "step": "s2",
+      "goal": "Describe the consequences of this race condition, such as serving stale data or reduced cache efficiency.",
+      "cheap_p": 0.91,
+      "strong_p": 0.93,
+      "corrupt_p": 0.83,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.25,
+      "judge_order": "strong-first",
+      "judge_note": "Both candidates correctly mention at least one specific consequence relevant to cache systems, such as data inconsistency or performance degradation."
+    },
+    {
+      "task": "race-condition",
+      "step": "s4",
+      "goal": "Provide pseudocode for cache get and set operations implementing the chosen mechanism to prevent the race condition.",
+      "cheap_p": 0.66,
+      "strong_p": 0.86,
+      "corrupt_p": 0.34,
+      "verdict": "cheap-ok",
+      "route": "expensive",
+      "route_confidence": 0.57,
+      "judge_order": "cheap-first",
+      "judge_note": "Candidate A provides both cache get and set pseudocode with atomic per-entry locking and condition variable handling, while Candidate B only covers get operations and omits the required set implementa"
+    },
+    {
+      "task": "race-condition",
+      "step": "s5",
+      "goal": "Explain how the fix ensures that the fresher value is not overwritten by the slower thread.",
+      "cheap_p": 0.7,
+      "strong_p": 0.81,
+      "corrupt_p": 0.52,
+      "verdict": "cheap-ok",
+      "route": "expensive",
+      "route_confidence": 0.4,
+      "judge_order": "cheap-first",
+      "judge_note": "Candidate B explicitly references the pseudocode from s4 and clearly describes the concurrency control with atomicity and synchronization preventing the overwrite."
+    },
+    {
+      "task": "simple-fn",
+      "step": "s2",
+      "goal": "implement the Python function chunk(items, size) that yields consecutive lists of at most size items using the chosen al",
+      "cheap_p": 0.85,
+      "strong_p": 0.85,
+      "corrupt_p": 0.18,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.89,
+      "judge_order": "cheap-first",
+      "judge_note": "Both implementations are syntactically correct, handle all edge cases, and yield lists as specified, with no functional differences."
+    },
+    {
+      "task": "simple-fn",
+      "step": "s3",
+      "goal": "write test cases to verify the chunk function's correctness",
+      "cheap_p": 0.64,
+      "strong_p": 0.8,
+      "corrupt_p": 0.16,
+      "verdict": "strong-better",
+      "route": "cheap",
+      "route_confidence": 0.82,
+      "judge_order": "strong-first",
+      "judge_note": "Candidate A properly tests for exceptions on invalid sizes, aligning with likely s2 behavior, while Candidate B incorrectly asserts empty lists for size 0 and negative, which would fail if s2 raises V"
+    },
+    {
+      "task": "design-schema",
+      "step": "s1",
+      "goal": "List the names of all tables required for the multi-tenant feature-flag service.",
+      "cheap_p": 0.79,
+      "strong_p": 0.82,
+      "corrupt_p": 0.55,
+      "verdict": "strong-better",
+      "route": "expensive",
+      "route_confidence": 0.89,
+      "judge_order": "strong-first",
+      "judge_note": "Candidate A includes a junction table for flag-environment values which is essential for per-environment flag evaluation, while Candidate B lacks this table, making its list incomplete for flag manage"
+    },
+    {
+      "task": "design-schema",
+      "step": "s2",
+      "goal": "Define the schema for each table, including columns, data types, and primary keys.",
+      "cheap_p": 0.9,
+      "strong_p": 0.91,
+      "corrupt_p": 0.55,
+      "verdict": "cheap-ok",
+      "route": "expensive",
+      "route_confidence": 0.94,
+      "judge_order": "cheap-first",
+      "judge_note": "Both candidates define complete table schemas with primary keys, typed columns, and foreign keys supporting multi-tenancy and feature flags, satisfying all stated criteria."
+    },
+    {
+      "task": "design-schema",
+      "step": "s3",
+      "goal": "Specify indexes to add on the tables to optimize common query patterns.",
+      "cheap_p": 0.81,
+      "strong_p": 0.88,
+      "corrupt_p": 0.58,
+      "verdict": "strong-better",
+      "route": "expensive",
+      "route_confidence": 0.88,
+      "judge_order": "strong-first",
+      "judge_note": "Candidate A provides specific SQL indexes tied to expected queries and balances read/write overhead, while Candidate B is incomplete with vague descriptions and no SQL, making it less actionable."
+    },
+    {
+      "task": "design-schema",
+      "step": "s4",
+      "goal": "State and justify one trade-off accepted in the database schema design.",
+      "cheap_p": 0.86,
+      "strong_p": 0.91,
+      "corrupt_p": 0.84,
+      "verdict": "cheap-ok",
+      "route": "expensive",
+      "route_confidence": 0.9,
+      "judge_order": "cheap-first",
+      "judge_note": "Candidate A directly and comprehensively states and justifies the trade-off without extraneous details, making it more aligned with the step goal."
+    },
+    {
+      "task": "explain-error",
+      "step": "s1",
+      "goal": "Explain the cause of TypeError: unhashable type: 'list' when adding a list to a set.",
+      "cheap_p": 0.89,
+      "strong_p": 0.93,
+      "corrupt_p": 0.71,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.88,
+      "judge_order": "strong-first",
+      "judge_note": "Both correctly identify that sets require hashable elements, lists are unhashable due to mutability, and this mismatch raises the TypeError, fully satisfying the criteria."
+    },
+    {
+      "task": "explain-error",
+      "step": "s2",
+      "goal": "Provide the smallest code fix to avoid the TypeError by converting the list to a hashable type before adding to the set.",
+      "cheap_p": 0.89,
+      "strong_p": 0.91,
+      "corrupt_p": 0.33,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.98,
+      "judge_order": "cheap-first",
+      "judge_note": "Both provide valid Python code that converts the list to a tuple with minimal change, resolving the TypeError."
+    },
+    {
+      "task": "migration-zero-downtime",
+      "step": "s1",
+      "goal": "produce the deliverable for the task: Plan a zero-downtime Postgres migration that splits a live 50M row name column int",
+      "cheap_p": 0.82,
+      "strong_p": 0.8,
+      "corrupt_p": 0.2,
+      "verdict": "cheap-ok",
+      "route": "expensive",
+      "route_confidence": 0.99,
+      "judge_order": "strong-first",
+      "judge_note": "Both candidates provide complete, ordered migration plans covering steps, old-code behavior at each step, and rollback, with different minor trade-offs (A has cleaner ordering but a non-functional COM"
+    },
+    {
+      "task": "summarize-tradeoffs",
+      "step": "s1",
+      "goal": "Generate a structured comparison of SQLite and PostgreSQL focusing on full text search capabilities and suitability for ",
+      "cheap_p": 0.91,
+      "strong_p": 0.9,
+      "corrupt_p": 0.44,
+      "verdict": "cheap-ok",
+      "route": "expensive",
+      "route_confidence": 0.62,
+      "judge_order": "strong-first",
+      "judge_note": "Candidate A provides a more comprehensive, accurate, and structured comparison with detailed metrics and balanced analysis across all required criteria."
+    },
+    {
+      "task": "regex-extract",
+      "step": "s1",
+      "goal": "Create a regular expression pattern to match and extract the version part from strings like 'pkg-1.2.3-beta'.",
+      "cheap_p": 0.88,
+      "strong_p": 0.87,
+      "corrupt_p": 0.72,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.96,
+      "judge_order": "strong-first",
+      "judge_note": "Both patterns are valid Python regex that correctly extract '1.2.3-beta' from the given example with no false positives or negatives."
+    }
+  ]
+}

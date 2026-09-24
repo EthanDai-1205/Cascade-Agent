@@ -1,0 +1,337 @@
+{
+  "judge_tier": "judge-b",
+  "cheap_tier": "cheap",
+  "strong_tier": "expensive",
+  "stub": false,
+  "pairs": 16,
+  "unparsed_judgements": 0,
+  "judge_failures": 1,
+  "generation_failures": 1,
+  "gate_failures": 0,
+  "planner_failures": 0,
+  "costs": {
+    "model_usd": 0.279148,
+    "jev_usd": 0.015194,
+    "judge_usd": 0.149663,
+    "total_usd": 0.444006
+  },
+  "mean_cost_per_step": {
+    "cheap": 0.002448,
+    "strong": 0.016162
+  },
+  "gate": {
+    "mean_p_real": 0.7969,
+    "mean_p_corrupted": 0.4194,
+    "separation": 0.3775,
+    "mean_p_when_sufficient": 0.8575,
+    "mean_p_when_insufficient": 0.79,
+    "discrimination": 0.0675,
+    "sufficient_samples": 12,
+    "insufficient_samples": 2
+  },
+  "routing": {
+    "under_routed": 0,
+    "over_routed": 5,
+    "steps": 14
+  },
+  "judge_position": {
+    "a_wins": 8,
+    "judged": 14,
+    "a_win_rate": 0.5714
+  },
+  "gate_is_decorative": false,
+  "recommended_threshold": 0.9,
+  "recommended_reason": "cheapest threshold that keeps missed shortfalls at or under 5% (missed 0% here)",
+  "sweep": [
+    {
+      "threshold": 0.1,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.1429,
+      "corrupt_pass_rate": 1.0,
+      "expected_cost": 0.002521
+    },
+    {
+      "threshold": 0.2,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.1429,
+      "corrupt_pass_rate": 0.8571,
+      "expected_cost": 0.002521
+    },
+    {
+      "threshold": 0.3,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.1429,
+      "corrupt_pass_rate": 0.7143,
+      "expected_cost": 0.002521
+    },
+    {
+      "threshold": 0.4,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.1429,
+      "corrupt_pass_rate": 0.5714,
+      "expected_cost": 0.002521
+    },
+    {
+      "threshold": 0.5,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.1429,
+      "corrupt_pass_rate": 0.3571,
+      "expected_cost": 0.002521
+    },
+    {
+      "threshold": 0.6,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.1429,
+      "corrupt_pass_rate": 0.2143,
+      "expected_cost": 0.002521
+    },
+    {
+      "threshold": 0.7,
+      "escalate_rate": 0.0,
+      "wasted_rate": 0.0,
+      "missed_rate": 0.1429,
+      "corrupt_pass_rate": 0.0714,
+      "expected_cost": 0.002521
+    },
+    {
+      "threshold": 0.8,
+      "escalate_rate": 0.2857,
+      "wasted_rate": 0.2143,
+      "missed_rate": 0.0714,
+      "corrupt_pass_rate": 0.0,
+      "expected_cost": 0.007166
+    },
+    {
+      "threshold": 0.9,
+      "escalate_rate": 0.7143,
+      "wasted_rate": 0.5714,
+      "missed_rate": 0.0,
+      "corrupt_pass_rate": 0.0,
+      "expected_cost": 0.014135
+    },
+    {
+      "threshold": 1.0,
+      "escalate_rate": 1.0,
+      "wasted_rate": 0.8571,
+      "missed_rate": 0.0,
+      "corrupt_pass_rate": 0.0,
+      "expected_cost": 0.018781
+    }
+  ],
+  "samples": [
+    {
+      "task": "trivial-rename",
+      "step": "s1",
+      "goal": "Rewrite the Python snippet by renaming variable 'd' to 'depth' in the function parameter and body.",
+      "cheap_p": 0.96,
+      "strong_p": 0.96,
+      "corrupt_p": 0.2,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 1.0,
+      "judge_order": "strong-first",
+      "judge_note": "Both candidates contain the same valid Python function with 'depth' as the parameter and in the return statement, satisfying all criteria."
+    },
+    {
+      "task": "race-condition",
+      "step": "s1",
+      "goal": "Explain the failure where two threads miss the same cache entry, both compute, and the slower overwrites the fresher val",
+      "cheap_p": 0.79,
+      "strong_p": 0.88,
+      "corrupt_p": 0.44,
+      "verdict": "cheap-ok",
+      "route": "expensive",
+      "route_confidence": 0.19,
+      "judge_order": "strong-first",
+      "judge_note": "Both candidates accurately describe the race condition, how cache misses trigger parallel computation, and the slower thread's overwrite of the fresher value, but Candidate A provides a granular step-"
+    },
+    {
+      "task": "race-condition",
+      "step": "s2",
+      "goal": "Provide a fix that prevents the overwrite without holding a global lock during computation.",
+      "cheap_p": 0.78,
+      "strong_p": 0.79,
+      "corrupt_p": 0.54,
+      "verdict": "cheap-ok",
+      "route": "expensive",
+      "route_confidence": 0.93,
+      "judge_order": "strong-first",
+      "judge_note": "Both implement valid CAS-based synchronization avoiding global locks during computation, but Candidate A provides a more thorough correctness rationale, handles edge cases like exceptions and re-compu"
+    },
+    {
+      "task": "simple-fn",
+      "step": "s2",
+      "goal": "Generate the Python function chunk(items, size) that yields consecutive lists of at most size items, incorporating the d",
+      "cheap_p": 0.91,
+      "strong_p": 0.92,
+      "corrupt_p": 0.11,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.83,
+      "judge_order": "cheap-first",
+      "judge_note": "Both candidates implement a correct chunk function with the required name, parameters, docstring, iter/next-based chunking logic, and ValueError for size <= 0; the core implementations are functionall"
+    },
+    {
+      "task": "design-schema",
+      "step": "s1",
+      "goal": "List the core tables for the multi-tenant feature-flag service with their purposes.",
+      "cheap_p": 0.86,
+      "strong_p": 0.88,
+      "corrupt_p": 0.38,
+      "verdict": "cheap-ok",
+      "route": "expensive",
+      "route_confidence": 0.93,
+      "judge_order": "cheap-first",
+      "judge_note": "Both include all required tables (tenants, feature flags, rules, audit logs), but B is more complete with detailed column definitions, types, constraints, explicit indexes with rationale, and an envir"
+    },
+    {
+      "task": "design-schema",
+      "step": "s2",
+      "goal": "Define the columns, data types, and primary keys for each table.",
+      "cheap_p": 0.76,
+      "strong_p": 0.87,
+      "corrupt_p": 0.35,
+      "verdict": "cheap-ok",
+      "route": "expensive",
+      "route_confidence": 0.88,
+      "judge_order": "cheap-first",
+      "judge_note": "Both schemas have primary keys, appropriate columns, and valid data types, but Candidate B is far more comprehensive \u2014 covering environments, multivariate variants, targeting rules, segments, and audi"
+    },
+    {
+      "task": "design-schema",
+      "step": "s3",
+      "goal": "Specify foreign key constraints to link related tables.",
+      "cheap_p": 0.86,
+      "strong_p": 0.85,
+      "corrupt_p": 0.6,
+      "verdict": "cheap-ok",
+      "route": "expensive",
+      "route_confidence": 0.88,
+      "judge_order": "strong-first",
+      "judge_note": "Candidate A provides more comprehensive foreign key coverage (10 constraints across users, features, environments, feature_flag_values, rollout_rules, and audit_log) with well-reasoned ON DELETE behav"
+    },
+    {
+      "task": "design-schema",
+      "step": "s4",
+      "goal": "Identify and list indexes to add for performance optimization.",
+      "cheap_p": 0.84,
+      "strong_p": 0.94,
+      "corrupt_p": 0.76,
+      "verdict": "strong-better",
+      "route": "expensive",
+      "route_confidence": 0.82,
+      "judge_order": "strong-first",
+      "judge_note": "Candidate A provides comprehensive index coverage across all relevant tables (feature_flags, flag_values, flag_overrides, audit_log, environments) with clear access-pattern justifications for a multi-"
+    },
+    {
+      "task": "explain-error",
+      "step": "s1",
+      "goal": "Explain the concept of hashability and why Python sets require elements to be hashable for efficient operations.",
+      "cheap_p": 0.9,
+      "strong_p": 0.89,
+      "corrupt_p": 0.65,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.74,
+      "judge_order": "cheap-first",
+      "judge_note": "Both correctly define hashability, explain that sets use hash tables for lookup/storage, and connect immutability to the hashability requirement; Candidate B is more thorough with concrete examples, c"
+    },
+    {
+      "task": "explain-error",
+      "step": "s2",
+      "goal": "Explain why lists are not hashable in Python due to their mutability.",
+      "cheap_p": 0.86,
+      "strong_p": 0.9,
+      "corrupt_p": 0.55,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.89,
+      "judge_order": "strong-first",
+      "judge_note": "Both clearly link mutability to unhashability by stating mutable objects cannot have a consistent hash value, but Candidate A provides a more structured, step-by-step explanation with clearer examples"
+    },
+    {
+      "task": "explain-error",
+      "step": "s3",
+      "goal": "Describe the specific TypeError that occurs when adding a list to a set, including when and why it happens.",
+      "cheap_p": 0.81,
+      "strong_p": 0.83,
+      "corrupt_p": 0.46,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.88,
+      "judge_order": "cheap-first",
+      "judge_note": "Both correctly describe the TypeError: unhashable type: 'list' error and cover both add() and set literal contexts, but B provides a more thorough explanation of why the error occurs (hash table mecha"
+    },
+    {
+      "task": "explain-error",
+      "step": "s5",
+      "goal": "Provide a code snippet that demonstrates the smallest fix, showing how to correctly add the element to a set.",
+      "cheap_p": 0.92,
+      "strong_p": 0.87,
+      "corrupt_p": 0.14,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.95,
+      "judge_order": "strong-first",
+      "judge_note": "Both candidates show correct tuple conversion with comments, but Candidate B presents a tighter, self-contained code snippet with the broken line commented out for direct before/after comparison, matc"
+    },
+    {
+      "task": "explain-error",
+      "step": "s6",
+      "goal": "Explain why the chosen fix resolves the error by connecting it back to the concept of hashability.",
+      "cheap_p": 0.88,
+      "strong_p": 0.91,
+      "corrupt_p": 0.26,
+      "verdict": "cheap-ok",
+      "route": "cheap",
+      "route_confidence": 0.68,
+      "judge_order": "cheap-first",
+      "judge_note": "Both candidates explicitly state the fix makes the element hashable and avoids the TypeError, but Candidate B is more explicit and structured, directly stating 'the fix makes the element hashable' and"
+    },
+    {
+      "task": "migration-zero-downtime",
+      "step": "s1",
+      "goal": "Document current database schema and application usage of the name column.",
+      "cheap_p": 0.0,
+      "strong_p": 0.0,
+      "corrupt_p": 0.0,
+      "verdict": "gen-error",
+      "route": "",
+      "route_confidence": 0.0,
+      "judge_order": "",
+      "judge_note": "cheap: The read operation timed out"
+    },
+    {
+      "task": "migration-zero-downtime",
+      "step": "s3",
+      "goal": "Generate SQL to add first_name and last_name columns without downtime.",
+      "cheap_p": 0.88,
+      "strong_p": 0.94,
+      "corrupt_p": 0.81,
+      "verdict": "judge-error",
+      "route": "expensive",
+      "route_confidence": 0.37,
+      "judge_order": "",
+      "judge_note": "The read operation timed out"
+    },
+    {
+      "task": "migration-zero-downtime",
+      "step": "s4",
+      "goal": "Create a script to backfill first_name and last_name from the name column.",
+      "cheap_p": 0.74,
+      "strong_p": 0.91,
+      "corrupt_p": 0.46,
+      "verdict": "strong-better",
+      "route": "expensive",
+      "route_confidence": 0.82,
+      "judge_order": "strong-first",
+      "judge_note": "Candidate A is a complete, correct Python script that processes rows in batches, logs progress thoroughly, handles multiple error types (including lock/serialization failures), and implements the s2 s"
+    }
+  ]
+}

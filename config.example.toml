@@ -1,0 +1,214 @@
+# jev-cascade configuration.
+#
+# Copy this file to config.toml and edit the tiers. Secrets never live here:
+# each tier names an environment variable, and ${VAR:-default} interpolation is
+# supported in any string value. A .env file next to the config is loaded
+# automatically (existing environment variables always win).
+
+[agent]
+planner_tier       = "cheap"   # which tier decomposes the task (planning is a cheap job)
+planner_mode       = "llm"     # llm | heuristic  (heuristic = offline, deterministic, no keys)
+max_steps          = 8         # cap on decomposed steps
+planner_max_tokens = 4096      # the planner's own output cap; reasoning counts against it.
+
+max_cost_usd       = 0.50      # hard stop for a single run, in the price currency below
+budget_guard_ratio = 0.8       # above this share of the budget, stop escalating (1.0 = off)
+error_retries      = 1         # retry the same tier this many times on a provider error
+task_timeout_s     = 600       # wall clock cap for a single run
+ledger_path        = ""        # JSONL path; empty = in-memory only
+verbose            = true
+
+[jev]
+# kind = "http"  runs the hosted API; kind = "laya" runs Laya locally on Apple Silicon
+# through MLX, with no key and no cost per call. Measured on both: the local engine is good
+# at classification-shaped calls (routing 7/8, triage 7/8) and weak at choosing an action
+# from a screen (1/6, against the hosted engine's 5/6), so point roles at it accordingly and
+# leave [browser] actor on the hosted engine. Locally it is also small: 512 tokens by
+# default, which holds the instructions, the options and the state together, so it refuses a
+# question with more than about 126 options. Raising max_len and head_max_len below (both
+# together, both above the runtime minimum) takes 255 options, outside the project's
+# published validation.
+kind            = "http"
+base_url        = "https://api.typesafe.ai/v1/systemone"
+model           = "jev-latest"
+api_key_env     = "TYPESAFE_API_KEY"
+price           = { input = 0.042, output = 0.0, currency = "USD" }   # per 1M tokens
+timeout_s       = 90
+max_retries     = 3
+max_state_chars = 12000    # state is clipped to this before it is sent
+verify          = true     # gate every generative step with a Noul question
+escalate_below  = 0.90     # re-run on the next tier up when p is below this. Measured 2026-09-21 on
+                           # 16 tasks: both the self-judging run (25/28 cheap outputs sufficient) and
+                           # the outside-judge run (21/26) recommend 0.90, and it cuts the shortfalls the
+                           # gate keeps from 19% to 8%. Read the caveat in README: at 0.90 the cascade
+                           # escalates ~60% of steps, so it saves only ~20% against all-strong. If the
+                           # gate's discrimination gap is at or below zero, the number is a cost dial,
+                           # not a detector, and the criteria are what need sharpening.
+max_escalations = 1        # escalations allowed per step
+same_tier_retries = 0      # retry the same tier this many times before escalating (try 1)
+candidates      = 1        # cheap drafts for Jev to choose from (1 = off, 3 is a good try)
+
+[eval]
+judge_tier     = "expensive"      # tier used as the blind judge; point it at a judge_only tier of another
+                                  # family (or pass --judge NAME) to remove self-grading bias
+task_set       = "evals/tasks.toml"
+max_pairs      = 24               # cost knob: every pair is 2 generations, 3 Jev calls and 1 judge call;
+                                  # raise it until the whole task set is sampled
+threshold_step = 0.1              # sweep resolution
+miss_tolerance = 0.05             # the miss rate the recommended threshold must stay inside
+corrupt_ratio  = 0.5              # how much of an output to truncate for the gate-teeth probe
+seed           = 1234             # fixes the blind presentation order, so results are reproducible
+max_tokens     = 0                # 0 = measure the tiers exactly as configured; set a number to cap eval generations
+judge_max_tokens = 8192           # the judge reasons over two outputs before answering;
+                                  # a reasoning judge can spend a smaller cap entirely on thinking
+min_judged_pairs = 8              # below this the eval measures but refuses to recommend
+# strong_tier  = "expensive"      # unset: the strongest tier that can run a step (never a judge_only one)
+
+# Tiers are declared cheapest first. Order matters twice over: escalation walks up
+# the list of tiers that RUN STEPS, and "cheap" is the tier that gets candidate
+# drafting. A tier marked `judge_only = true` is in neither, so it can only grade.
+# `kind` is "openai" (any OpenAI-compatible endpoint), "anthropic" (Claude-shaped
+# proxies) or "mock" (no key needed).
+#
+# Prices are per 1M tokens and MUST be your real list prices, because the ledger
+# and the eval report them as fact. The numbers below are the CNY list prices from
+# this machine's Reasonix config converted at 7.1 CNY/USD, so the 3x ratio between
+# the tiers is faithful while the absolute dollars are approximate. Replace them
+# with your actual billed prices and set `currency` to match your bill.
+
+[[tiers]]
+name        = "cheap"
+kind        = "openai"
+base_url    = "https://api.deepseek.com/v1"
+model       = "deepseek-flash"
+api_key_env = "DEEPSEEK_API_KEY"
+description = "a small fast model, fine for mechanical edits, short rewrites, routine code and explanations"
+price       = { input = 0.42, output = 1.27, currency = "USD" }
+# This tier is a reasoning model: its thinking is charged to this cap and its length
+# varies a lot per call (measured: 121, then 2994, then 1126 reasoning tokens on the
+# same prompt). A tight cap fails a fraction of calls with an empty answer, which the
+# provider reports as an error, and [agent] error_retries then retries the same tier.
+max_tokens  = 8192
+temperature = 0.2
+
+[[tiers]]
+name        = "expensive"
+kind        = "openai"
+base_url    = "https://api.deepseek.com/v1"
+model       = "deepseek-v4-pro"
+api_key_env = "DEEPSEEK_API_KEY"
+description = "a strong reasoning model for design decisions, debugging, refactors, and anything with real ambiguity"
+price       = { input = 1.27, output = 3.80, currency = "USD" }
+# A reasoning model spends its thinking against this cap, so a tight one fails the
+# hardest steps with an empty answer. The cap bounds the answer, it does not cost
+# anything unused.
+max_tokens  = 16384
+temperature = 0.2
+
+# ---------------------------------------------------------------------------
+# The browser tool: cheap computer use. Read the page's own text and controls, ask the
+# decision engine for one action, take it, repeat. No vision model is involved, which is
+# where the cost saving comes from.
+#
+# [browser]
+# actor          = "jev"    # which engine chooses the action; "laya" is allowed but measured weak
+# max_steps      = 12
+# min_confidence = 0.35     # stop rather than act on a decision below this
+# max_controls   = 25       # controls offered as options, each naming its target
+# headed         = false    # show the browser window
+# node           = "node"
+# playwright     = ""       # module specifier for the bridge; empty = resolve "playwright"
+# writer_tier    = ""       # tier that composes typed text (gated by Jev); empty = --text only
+#
+# ---------------------------------------------------------------------------
+# The desktop tool: the same trick pointed at the screen. The frontmost app reports its
+# own controls through the macOS Accessibility tree, read by a Swift bridge; no pixels
+# are ever read, so only the Accessibility permission is needed, never Screen Recording.
+# Nothing acts without --act, and allowed_apps names the apps the loop may act on.
+#
+# [computer]
+# actor          = "jev"    # same measured rule as the browser: action stays on hosted Jev
+# max_steps      = 10
+# min_confidence = 0.35
+# max_controls   = 25       # controls offered as options, each naming its target
+# max_elements   = 120      # AX-tree walk cap inside the bridge
+# swift          = "swift"  # toolchain used to run (or compile) tools/macos_bridge.swift
+# bridge         = ""       # path to the Swift source; empty = the bundled one
+# writer_tier    = ""       # tier that composes typed text; empty = --text only
+# allowed_apps   = ""       # comma-separated app names; empty = any
+#
+# ---------------------------------------------------------------------------
+# Other tiers you can drop in, all just config.
+#
+# A cheaper multi-model gateway (measured on this machine 2026-09-21). Two things to
+# know before pointing tiers at a platform like this one:
+#
+# 1. Not every model honours `response_format = {"type": "json_object"}`, which the
+#    planner and the judge both rely on. Measured on this endpoint, of the models tried:
+#    step-3.7-flash, kimi-k3, kimi-k2.7, deepseek-v4-pro, deepseek-v4.1-flash,
+#    doubao-seed-2.1-turbo, mimo-v2.5-pro and grok-4.6 returned real JSON, while
+#    glm-5.3, glm-5.3-flash, qwen3.7-plus and MiniMax-M3 answered in prose and every
+#    pair they graded came back unparsed. A model that ignores the flag still works as
+#    an *executor* (generation needs no JSON), just not as planner or judge.
+# 2. Latency is variable and can exceed the 120s default timeout, which costs pairs.
+#
+# [[tiers]]
+# name        = "cheap"
+# kind        = "openai"
+# base_url    = "https://api.llm-token.cn/v1"
+# model       = "step-3.7-flash"
+# api_key_env = "LLMTOKEN_API_KEY"
+# description = "a small fast non-reasoning model, fine for mechanical edits, short rewrites, routine code"
+# price       = { input = 0.4, output = 2.0, currency = "CNY" }
+# max_tokens  = 8192
+# timeout_s   = 300
+#
+# OpenRouter (one key, many models, and a genuinely different judge family):
+#
+# [[tiers]]
+# name        = "judge"
+# kind        = "openai"
+# base_url    = "https://openrouter.ai/api/v1"
+# model       = "anthropic/claude-sonnet-4.5"
+# api_key_env = "OPENROUTER_API_KEY"
+# description = "an outside model used only to grade pairs, never to route or generate"
+# price       = { input = 3.00, output = 15.00, currency = "USD" }
+#
+# A different family over an OpenAI-shaped proxy. `judge_only = true` is the part
+# that matters: it keeps this tier out of the ladder and out of Jev's routing
+# options, so it can grade the pairs without ever becoming one side of them.
+#
+# [[tiers]]
+# name        = "judge"
+# kind        = "openai"
+# base_url    = "https://gpt-agent.cc/v1"
+# model       = "gemini-3.1-pro"
+# api_key_env = "GPT_AGENT_KEY"
+# description = "an outside model used only to grade pairs"
+# judge_only  = true
+# price       = { input = 2.00, output = 12.00, currency = "USD" }
+#
+# Claude-shaped proxy (note kind = "anthropic"; base_url is the root, /v1/messages
+# is appended):
+#
+# [[tiers]]
+# name        = "judge"
+# kind        = "anthropic"
+# base_url    = "https://gpt-agent.cc"
+# model       = "claude-sonnet-4-6"
+# api_key_env = "GPT_AGENT_KEY"
+# description = "an outside model used only to grade pairs"
+# judge_only  = true
+# price       = { input = 3.00, output = 15.00, currency = "USD" }
+#
+# Local, free, offline (Ollama):
+#
+# [[tiers]]
+# name        = "cheap"
+# kind        = "openai"
+# base_url    = "http://127.0.0.1:11434/v1"
+# model       = "qwen2.5-coder:7b"
+# api_key_env = "OLLAMA_API_KEY"      # any non-empty value; Ollama ignores it
+# description = "a local model, free to run"
+# price       = { input = 0.0, output = 0.0, currency = "USD" }
+# ---------------------------------------------------------------------------
