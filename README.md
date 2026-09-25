@@ -445,7 +445,7 @@ Live runs against real apps, every one auditable in `runs/*.jsonl` (gitignored):
 cd Coding/jev-cascade
 
 make demo      # full run, stub tiers and stub Jev, no keys, no network
-make test      # 284 offline checks: routing, gates, retries, budget, ledger, the eval,
+make test      # 309 offline checks: routing, gates, retries, budget, ledger, the eval,
                # the browser loop, the desktop loop, the writer
 make check     # validate your config and see which keys are present
 ```
@@ -595,7 +595,7 @@ a `judge_only` tier is refused here), `--candidates N`, `--no-verify`, `--max-co
 
 ## Tests
 
-`make test` runs 279 offline checks and needs no keys and no network:
+`make test` runs 309 offline checks and needs no keys and no network:
 
 - config validation, `${VAR:-default}` interpolation, tier ordering and escalation order,
   and the `judge_only` invariants: out of the ladder, out of the router's options, skipped
@@ -782,11 +782,12 @@ jev_cascade/
   writer.py     a cheap tier composes typed text, gated by Jev, booked in the ledger
   eval.py       pair building, blind judging, threshold sweep, recommendation
   ledger.py     per-step records, JSONL events, honest summary
-  cli.py        run / eval / browse / computer / plan / check / demo / selftest
+  cli.py        run / eval / browse / computer / plan / check / serve / demo / selftest
+  mcp_server.py  the MCP stdio server: the cascade as tools for any agent
 tools/browser_bridge.mjs   the Playwright session the browser tool drives
 tools/macos_bridge.swift   the Accessibility-tree reader the desktop tool drives
   testing.py    test doubles (ScriptedJev, StaticPlanner, FailingProvider)
-tests/          284 offline checks, no keys and no network
+tests/          309 offline checks, no keys and no network
 evals/tasks.toml   the eval's 16-task set, difficulty interleaved on purpose
 evals/results/     the measured eval reports quoted above, every run kept
 config.example.toml

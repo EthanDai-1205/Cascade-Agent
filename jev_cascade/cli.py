@@ -141,6 +141,14 @@ def build_parser() -> argparse.ArgumentParser:
     computer.add_argument("--ledger", help="append the step trace to this JSONL file")
     computer.add_argument("--quiet", action="store_true", help="suppress the step trace")
 
+    sub.add_parser(
+        "serve",
+        help="speak MCP over stdio so an agent client (ZCode, Claude Code, ...) can call the cascade as tools",
+        description=(
+            "Runs until the client closes stdin. Register it with your client as "
+            "command=python3, args=[-m, jev_cascade, serve]."
+        ),
+    )
     sub.add_parser("check", help="validate the config and report which keys are present")
     sub.add_parser("selftest", help="run the offline test suite (no network, no keys)")
 
@@ -516,6 +524,11 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_selftest()
     if args.command == "demo":
         return _cmd_demo(args)
+    if args.command == "serve":
+        from .mcp_server import McpServer, build_tools, serve_stdio  # noqa: PLC0415
+
+        serve_stdio(McpServer(build_tools()))
+        return 0
 
     try:
         config = load_config(args.config)
