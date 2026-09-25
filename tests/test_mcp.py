@@ -197,3 +197,128 @@ class TestServeLoop(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestCascadeTools(unittest.TestCase):
+    """The five real tools, offline: patched config, patched loops, no keys."""
+
+    def setUp(self) -> None:
+        from jev_cascade import mcp_server
+        from jev_cascade.testing import base_config
+
+        self.mcp_server = mcp_server
+        self._original_load = mcp_server._load_config
+        mcp_server._load_config = lambda: base_config()
+
+    def tearDown(self) -> None:
+        self.mcp_server._load_config = self._original_load
+
+    def a_server(self) -> McpServer:
+        return McpServer(tools=self.mcp_server.build_tools())
+
+    def call(self, name: str, arguments: dict) -> dict:
+        reply = self.a_server().handle_message(
+            {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+             "params": {"name": name, "arguments": arguments}}
+        )
+        assert reply is not None
+        return reply["result"]
+
+    def test_the_registry_is_exactly_the_five_agent_facing_tools(self) -> None:
+        reply = self.a_server().handle_message({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
+        assert reply is not None
+        names = [tool["name"] for tool in reply["result"]["tools"]]
+        self.assertEqual(
+            names,
+            ["cascade_run", "cascade_plan", "cascade_browse", "cascade_computer", "cascade_check"],
+        )
+        for tool in reply["result"]["tools"]:
+            self.assertEqual(tool["inputSchema"]["type"], "object")
+
+    def test_acting_tools_require_the_goal_and_default_to_dry_run(self) -> None:
+        reply = self.a_server().handle_message({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
+        assert reply is not None
+        schemas = {tool["name"]: tool for tool in reply["result"]["tools"]}
+        for name in ("cascade_browse", "cascade_computer"):
+            schema = schemas[name]["inputSchema"]
+            self.assertEqual(schema["required"], ["goal"])
+            self.assertNotIn("act", schema.get("required", []))
+            self.assertIn("act=true", schemas[name]["description"])
+
+    def test_cascade_plan_decomposes_offline(self) -> None:
+        result = self.call("cascade_plan", {"task": "classify this and then write the reply"})
+        self.assertNotIn("isError", result)
+        structured = result["structuredContent"]
+        self.assertTrue(structured.get("steps"))
+        self.assertEqual(structured["steps"][0]["kind"], "decide")
+
+    def test_cascade_check_reports_the_config(self) -> None:
+        result = self.call("cascade_check", {})
+        self.assertNotIn("isError", result)
+        self.assertIn("planner", result["content"][0]["text"])
+
+    def test_a_broken_config_surfaces_as_an_is_error_result(self) -> None:
+        from jev_cascade.config import ConfigError
+
+        def broken():
+            raise ConfigError("[browser] writer_tier 'nope' cannot run a step")
+
+        self.mcp_server._load_config = broken
+        result = self.call("cascade_check", {})
+        self.assertTrue(result["isError"])
+        self.assertIn("writer_tier", result["content"][0]["text"])
+
+    def test_cascade_run_executes_the_loop_offline(self) -> None:
+        result = self.call("cascade_run", {"task": "classify this bug report", "dry_run": True})
+        self.assertNotIn("isError", result)
+        structured = result["structuredContent"]
+        self.assertTrue(structured["outputs"])
+        self.assertTrue(structured["stub"])
+
+    def test_cascade_browse_dry_run_touches_nothing_and_says_so(self) -> None:
+        import unittest.mock
+
+        from jev_cascade.browser import BrowserResult
+
+        def stub_runner(goal, config, **kwargs):
+            self.assertIs(kwargs["act"], False, "a dry run must reach the loop with act=false")
+            return BrowserResult(goal=goal, stop_reason="dry run: one step reported, nothing was done")
+
+        # Patch at the source module: the handler imports the loop per call.
+        with unittest.mock.patch("jev_cascade.browser.run_browser_task", stub_runner):
+            result = self.call("cascade_browse", {"goal": "find the page"})
+        self.assertNotIn("isError", result)
+        self.assertEqual(
+            result["structuredContent"]["stop_reason"],
+            "dry run: one step reported, nothing was done",
+        )
+        self.assertIn("act=true", result["content"][0]["text"])
+
+    def test_cascade_browse_acting_without_a_key_refuses_honestly(self) -> None:
+        result = self.call("cascade_browse", {"goal": "find the page", "act": True})
+        self.assertTrue(result["isError"])
+        self.assertIn("decision engine", result["content"][0]["text"])
+
+    def test_cascade_computer_dry_run_against_a_stub_loop(self) -> None:
+        import unittest.mock
+
+        from jev_cascade.computer import ComputerResult
+
+        def stub_runner(goal, config, **kwargs):
+            self.assertIs(kwargs["act"], False)
+            self.assertEqual(kwargs["app"], "Notes")
+            return ComputerResult(
+                goal=goal,
+                stop_reason="dry run: one step reported, nothing was done",
+                final_state={"app": "Notes", "window": "Untitled", "lines": []},
+            )
+
+        with unittest.mock.patch("jev_cascade.computer.run_computer_task", stub_runner):
+            result = self.call("cascade_computer", {"goal": "make a note", "app": "Notes"})
+        self.assertNotIn("isError", result)
+        self.assertEqual(result["structuredContent"]["final"]["app"], "Notes")
+        self.assertIn("act=true", result["content"][0]["text"])
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -188,3 +188,267 @@ def serve_stdio(
         if reply is not None:
             sink.write(json.dumps(reply) + "\n")
             sink.flush()
+
+
+# ---------------------------------------------------------------------------
+# The tool layer: thin wrappers over the same functions the CLI calls. Handlers
+# import their machinery lazily so a server that only ever answers tools/list
+# never pays for the agent stack, and config is loaded per call so a fix to
+# config.toml takes effect without restarting the server.
+
+SCHEMA_STRING = {"type": "string"}
+SCHEMA_BOOL = {"type": "boolean"}
+SCHEMA_INT = {"type": "integer", "minimum": 1}
+
+
+def _load_config():
+    from .config import load_config
+
+    return load_config()  # find_config: $JEVCASCADE_CONFIG, then ./config.toml, then example
+
+
+def _need_actor(config):
+    """The decision engine for a loop that will act, or the honest reason there isn't one."""
+
+    from .jev import build_jev
+
+    if config.jev.kind == "http" and not config.jev.api_key():
+        raise RuntimeError(
+            f"the cascade needs a decision engine: set ${config.jev.api_key_env} "
+            "for the hosted Jev, or set [jev] kind = \"laya\" for the local one"
+        )
+    return build_jev(config.jev)
+
+
+def _actor_for(config, act: bool):
+    """Dry runs degrade to the stub engine without a key (flagged in the trace);
+    anything that acts needs a real one, or the honest refusal above."""
+
+    from .jev import build_jev
+
+    if not act and config.jev.kind == "http" and not config.jev.api_key():
+        return build_jev(config.jev, dry_run=True)
+    return _need_actor(config)
+
+
+def _tool_run(args: dict) -> dict:
+    from .agent import CascadeAgent
+
+    config = _load_config()
+    dry_run = bool(args.get("dry_run", False))
+    agent = CascadeAgent(config, dry_run=dry_run, on_event=lambda message: None)
+    try:
+        result = agent.run(str(args.get("task", "")).strip() or "-")
+        outputs = result.outputs or {}
+        ledger = result.ledger
+        parts = []
+        for step_id, text in outputs.items():
+            parts.append(f"[{step_id}]\n{text.rstrip()}")
+        if ledger is not None:
+            parts.append(ledger.render_summary(config, stub=agent.stubbed))
+        if result.error:
+            parts.append(f"error: {result.error}")
+        structured = {
+            "task": args.get("task", ""),
+            "outputs": outputs,
+            "dry_run": dry_run,
+            "steps": len(ledger.records) if ledger else 0,
+            "total_cost_usd": round(ledger.total_cost_usd, 6) if ledger else 0.0,
+            "error": result.error or "",
+            "stub": agent.stubbed,
+            "ledger_path": config.agent.ledger_path,
+        }
+        return _text_result("\n\n".join(parts) or "the run produced no outputs", structured)
+    finally:
+        agent.ledger.close()
+
+
+def _tool_plan(args: dict) -> dict:
+    import json as _json
+
+    from .config import load_config
+    from .planner import build_planner, plan_to_json
+    from .providers import build_provider
+
+    config = _load_config()
+    providers = {tier.name: build_provider(tier) for tier in config.tiers}
+    planner = build_planner(config, providers)
+    plan = planner.plan(str(args.get("task", "")), dry_run=False)
+    structured = _json.loads(plan_to_json(plan))  # plan_to_json returns JSON text
+    return _text_result(_json.dumps(structured, indent=2), structured)
+
+
+def _dry_run_note(act: bool) -> str:
+    return "" if act else (
+        " NOTE: this was a dry run - nothing was clicked or typed. "
+        "Ask the user first, then call again with act=true to act."
+    )
+
+
+def _tool_browse(args: dict) -> dict:
+    import dataclasses
+
+    from .browser import BridgeError, run_browser_task
+    from .cli import browser_result_to_json
+
+    config = _load_config()
+    browser = config.browser
+    if args.get("steps") is not None:
+        browser = dataclasses.replace(browser, max_steps=max(1, int(args["steps"])))
+    if args.get("writer_tier"):
+        browser = dataclasses.replace(browser, writer_tier=str(args["writer_tier"]))
+    config = dataclasses.replace(config, browser=browser)
+
+    act = bool(args.get("act", False))
+    try:
+        actor = _need_actor(config) if act else _actor_for(config, act=False)
+        result = run_browser_task(
+            str(args.get("goal", "")),
+            config,
+            actor=actor,
+            url=str(args.get("url", "") or "about:blank"),
+            text=str(args.get("text", "")),
+            act=act,
+            max_steps=browser.max_steps,
+            min_confidence=browser.min_confidence,
+            max_controls=browser.max_controls,
+            writer_tier=browser.writer_tier,
+            on_event=lambda message: None,
+        )
+    except BridgeError as exc:
+        return _error_result(f"browser error: {exc}")
+    return _text_result(
+        result.render() + _dry_run_note(act), browser_result_to_json(result)
+    )
+
+
+def _tool_computer(args: dict) -> dict:
+    import dataclasses
+
+    from .cli import computer_result_to_json
+    from .computer import BridgeError, allowed_apps, run_computer_task
+
+    config = _load_config()
+    cfg = config.computer
+    if args.get("steps") is not None:
+        cfg = dataclasses.replace(cfg, max_steps=max(1, int(args["steps"])))
+    if args.get("writer_tier"):
+        cfg = dataclasses.replace(cfg, writer_tier=str(args["writer_tier"]))
+    config = dataclasses.replace(config, computer=cfg)
+
+    act = bool(args.get("act", False))
+    try:
+        actor = _need_actor(config) if act else _actor_for(config, act=False)
+        result = run_computer_task(
+            str(args.get("goal", "")),
+            config,
+            actor=actor,
+            text=str(args.get("text", "")),
+            act=act,
+            max_steps=cfg.max_steps,
+            min_confidence=cfg.min_confidence,
+            max_controls=cfg.max_controls,
+            writer_tier=cfg.writer_tier,
+            app=str(args.get("app", "")),
+            allowed=allowed_apps(cfg),
+            on_event=lambda message: None,
+        )
+    except BridgeError as exc:
+        return _error_result(f"computer error: {exc}")
+    return _text_result(
+        result.render() + _dry_run_note(act), computer_result_to_json(result)
+    )
+
+
+def _tool_check(args: dict) -> dict:
+    import contextlib
+    import io
+
+    from .cli import _cmd_check
+
+    buffer = io.StringIO()
+    with contextlib.redirect_stdout(buffer):
+        _cmd_check(_load_config())
+    return _text_result(buffer.getvalue(), {"ok": True})
+
+
+def build_tools() -> list[Tool]:
+    """The five agent-facing tools. Offline measurement (eval, selftest, demo)
+    stays in the CLI on purpose: an agent has no use for them."""
+
+    act_note = (
+        " DEFAULTS TO A DRY RUN: one step is reported and nothing is touched. "
+        "Ask the user first, then call again with act=true to act."
+    )
+    return [
+        Tool(
+            name="cascade_run",
+            description=(
+                "Run a text task through the cascade: decompose into steps, let the cheap "
+                "System One engine route and verify each one, execute on the cheapest tier "
+                "that earns it, escalate only when the gate fails. Every decision and cost "
+                "is in the returned trace."
+            ),
+            input_schema={
+                "properties": {"task": SCHEMA_STRING, "dry_run": SCHEMA_BOOL},
+                "required": ["task"],
+            },
+            handler=_tool_run,
+        ),
+        Tool(
+            name="cascade_plan",
+            description="Decompose a task into typed steps without executing anything.",
+            input_schema={"properties": {"task": SCHEMA_STRING}, "required": ["task"]},
+            handler=_tool_plan,
+        ),
+        Tool(
+            name="cascade_browse",
+            description=(
+                "Drive a real browser toward a goal for fractions of a cent: the page "
+                "reports its own text and controls, one typed decision per step, no vision "
+                "model. Best for navigation-shaped goals (find a page, click through, "
+                "search, fill one prepared string)." + act_note
+            ),
+            input_schema={
+                "properties": {
+                    "goal": SCHEMA_STRING,
+                    "url": SCHEMA_STRING,
+                    "text": SCHEMA_STRING,
+                    "act": SCHEMA_BOOL,
+                    "steps": SCHEMA_INT,
+                    "writer_tier": SCHEMA_STRING,
+                },
+                "required": ["goal"],
+            },
+            handler=_tool_browse,
+        ),
+        Tool(
+            name="cascade_computer",
+            description=(
+                "Drive the macOS desktop toward a goal through the Accessibility tree, one "
+                "typed decision per step, no pixels read. Best for simple app actions "
+                "(menus, buttons, one field)." + act_note
+            ),
+            input_schema={
+                "properties": {
+                    "goal": SCHEMA_STRING,
+                    "app": SCHEMA_STRING,
+                    "text": SCHEMA_STRING,
+                    "act": SCHEMA_BOOL,
+                    "steps": SCHEMA_INT,
+                    "writer_tier": SCHEMA_STRING,
+                },
+                "required": ["goal"],
+            },
+            handler=_tool_computer,
+        ),
+        Tool(
+            name="cascade_check",
+            description=(
+                "Validate the cascade config and report which API keys are present. Call "
+                "this first when another cascade tool fails."
+            ),
+            input_schema={"properties": {}, "required": []},
+            handler=_tool_check,
+        ),
+    ]
