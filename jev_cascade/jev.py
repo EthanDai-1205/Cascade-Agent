@@ -22,7 +22,8 @@ from typing import Any, Protocol
 
 from .config import JevConfig
 
-RETRYABLE_STATUS = {408, 409, 425, 429, 500, 502, 503, 504, 529}
+# 520-524 are Cloudflare's server-error family: transient by nature, seen live.
+RETRYABLE_STATUS = {408, 409, 425, 429, 500, 502, 503, 504, 520, 521, 522, 523, 524, 529}
 
 
 class JevError(RuntimeError):

@@ -134,6 +134,16 @@ class TestQuestionBuilders(unittest.TestCase):
             score_question([])
 
 
+class TestRetryableStatuses(unittest.TestCase):
+    def test_cloudflare_server_error_family_is_retried(self) -> None:
+        # Measured live 2026-09-27: a 520 from the Jev endpoint killed a whole game
+        # loop because Cloudflare's 5xx family was not in the retry set.
+        from jev_cascade.jev import RETRYABLE_STATUS
+
+        for status in (520, 521, 522, 523, 524):
+            self.assertIn(status, RETRYABLE_STATUS)
+
+
 class TestJevClientAgainstLocalServer(unittest.TestCase):
     def _config(self, url: str, **overrides) -> JevConfig:
         base = {"base_url": url, "model": "jev-latest", "max_retries": 0}
